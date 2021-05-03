@@ -90,6 +90,7 @@ class World(object):
         self.lane_invasion_sensor = None
         self.gnss_sensor = None
         self.camera_manager = None
+        self.camera_manager_1 = None
         self._weather_presets = find_weather_presets()
         self._weather_index = 0
         self._actor_filter = args.filter
@@ -100,6 +101,26 @@ class World(object):
         self.recording_start = 0
 
     def restart(self, args):
+        self.restart_camera_manager(args)
+        self.restart_camera_manager_1(args)
+        pass
+
+    def restart_camera_manager_1(self, args):
+        """Restart the world"""
+        # Keep same camera config if the camera manager exists.
+        cam_index = self.camera_manager_1.index if self.camera_manager_1 is not None else 6
+        cam_pos_id = self.camera_manager_1.transform_index if self.camera_manager_1 is not None else 0
+        # Set the seed if requested by user
+        if args.seed is not None:
+            random.seed(args.seed)
+
+        # Set up the sensors.
+        self.camera_manager_1 = CameraManager(
+            self.player, self.hud, self._gamma)
+        self.camera_manager_1.transform_index = cam_pos_id
+        self.camera_manager_1.set_sensor(cam_index, notify=False)
+
+    def restart_camera_manager(self, args):
         """Restart the world"""
         # Keep same camera config if the camera manager exists.
         cam_index = self.camera_manager.index if self.camera_manager is not None else 0
@@ -168,10 +189,15 @@ class World(object):
         self.camera_manager.sensor = None
         self.camera_manager.index = None
 
+        self.camera_manager_1.sensor.destroy()
+        self.camera_manager_1.sensor = None
+        self.camera_manager_1.index = None
+
     def destroy(self):
         """Destroys all actors"""
         actors = [
             self.camera_manager.sensor,
+            self.camera_manager_1.sensor,
             self.collision_sensor.sensor,
             self.lane_invasion_sensor.sensor,
             self.gnss_sensor.sensor,
@@ -305,7 +331,7 @@ class HUD(object):
                     for x in vehicles if x.id != world.player.id]
 
         for dist, vehicle in sorted(vehicles):
-            if dist > 200.0:
+            if dist > 100.0:
                 break
             vehicle_type = get_actor_display_name(vehicle, truncate=22)
             self._info_text.append('% 4dm %s' % (dist, vehicle_type))
@@ -652,7 +678,8 @@ class CameraManager(object):
         self = weak_self()
         if not self:
             return
-        if self.sensors[self.index][0].startswith('sensor.lidar'):
+        is_lidar = self.sensors[self.index][0].startswith('sensor.lidar')
+        if is_lidar:
             points = np.frombuffer(image.raw_data, dtype=np.dtype('f4'))
             points = np.reshape(points, (int(points.shape[0] / 4), 4))
             lidar_data = np.array(points[:, :2])
@@ -674,7 +701,10 @@ class CameraManager(object):
             array = array[:, :, ::-1]
             self.surface = pygame.surfarray.make_surface(array.swapaxes(0, 1))
         if self.recording:
-            image.save_to_disk('_out/%08d' % image.frame)
+            if is_lidar:
+                image.save_to_disk('_out/lidar_%08d' % image.frame)
+            else:
+                image.save_to_disk('_out/camera_%08d' % image.frame)
 
 # ==============================================================================
 # -- Game Loop ---------------------------------------------------------
