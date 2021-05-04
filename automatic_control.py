@@ -103,6 +103,7 @@ class World(object):
         self.camera_manager = None
         self.camera_manager_1 = None
         self.camera_manager_2 = None
+        self.camera_manager_3 = None
         self._weather_presets = find_weather_presets()
         self._weather_index = 0
         self._actor_filter = args.filter
@@ -116,6 +117,7 @@ class World(object):
         self.restart_camera_manager(args)
         self.restart_camera_manager_1(args)
         self.restart_camera_manager_2(args)
+        self.restart_camera_manager_3(args)
         pass
 
     def restart_camera_manager_1(self, args):
@@ -150,6 +152,23 @@ class World(object):
         self.camera_manager_2.transform_index = cam_pos_id
         self.camera_manager_2.set_sensor(cam_index, notify=False)
         self.camera_manager_2.name = "depth"
+
+    def restart_camera_manager_3(self, args):
+        """Restart the world"""
+        # Keep same camera config if the camera manager exists.
+        # 7 is seg lidar, 6 is lidar, 1 is raw_depth
+        cam_index = self.camera_manager_3.index if self.camera_manager_3 is not None else 7
+        cam_pos_id = self.camera_manager_3.transform_index if self.camera_manager_3 is not None else 0
+        # Set the seed if requested by user
+        if args.seed is not None:
+            random.seed(args.seed)
+
+        # Set up the sensors.
+        self.camera_manager_3 = CameraManager(
+            self.player, self.hud, self._gamma)
+        self.camera_manager_3.transform_index = cam_pos_id
+        self.camera_manager_3.set_sensor(cam_index, notify=False)
+        self.camera_manager_3.name = "lidar"
 
     def restart_camera_manager(self, args):
         """Restart the world"""
@@ -216,6 +235,7 @@ class World(object):
         self.camera_manager.tick(w_frame)
         self.camera_manager_1.tick(w_frame)
         self.camera_manager_2.tick(w_frame)
+        self.camera_manager_3.tick(w_frame)
 
     def render(self, display):
         """Render world"""
@@ -236,11 +256,17 @@ class World(object):
         self.camera_manager_2.sensor = None
         self.camera_manager_2.index = None
 
+        self.camera_manager_3.sensor.destroy()
+        self.camera_manager_3.sensor = None
+        self.camera_manager_3.index = None
+
     def destroy(self):
         """Destroys all actors"""
         actors = [
             self.camera_manager.sensor,
             self.camera_manager_1.sensor,
+            self.camera_manager_2.sensor,
+            self.camera_manager_3.sensor,
             self.collision_sensor.sensor,
             self.lane_invasion_sensor.sensor,
             self.gnss_sensor.sensor,
@@ -662,7 +688,8 @@ class CameraManager(object):
                 'Camera Semantic Segmentation (Raw)'],
             ['sensor.camera.semantic_segmentation', cc.CityScapesPalette,
              'Camera Semantic Segmentation (CityScapes Palette)'],
-            ['sensor.lidar.ray_cast', None, 'Lidar (Ray-Cast)']]
+            ['sensor.lidar.ray_cast', None, 'Lidar (Ray-Cast)'],
+            ['sensor.lidar.ray_cast_semantic', None, 'Lidar (Ray-Cast-Semantic)']]
         world = self._parent.get_world()
         bp_library = world.get_blueprint_library()
         for item in self.sensors:
@@ -720,10 +747,10 @@ class CameraManager(object):
         if self.recording and self.data is not None:
             if is_depth:
                 self.data.save_to_disk(
-                    '_dual_out/' + self.name + '_%08d' % frame_id, carla.ColorConverter.LogarithmicDepth)  # todo: save as np to avoid converting 0 to 1
+                    '_tri_out/' + self.name + '/%08d' % frame_id, carla.ColorConverter.LogarithmicDepth)  # todo: save as np to avoid converting 0 to 1
             else:
                 self.data.save_to_disk(
-                    '_dual_out/' + self.name + '_%08d' % frame_id)
+                    '_tri_out/' + self.name + '/%08d' % frame_id)
         self.data = None
 
     @staticmethod
