@@ -75,6 +75,17 @@ class World(object):
 
     def __init__(self, carla_world, hud, args):
         """Constructor method"""
+
+        # # set CARLA syncronous mode
+        # settings = carla_world.get_settings()
+        # settings.fixed_delta_seconds = 0.1
+        # settings.synchronous_mode = True
+        # carla_world.apply_settings(settings)
+
+        settings = carla_world.get_settings()
+        settings.synchronous_mode = False
+        carla_world.apply_settings(settings)
+
         self.world = carla_world
         try:
             self.map = self.world.get_map()
@@ -91,6 +102,7 @@ class World(object):
         self.gnss_sensor = None
         self.camera_manager = None
         self.camera_manager_1 = None
+        self.camera_manager_2 = None
         self._weather_presets = find_weather_presets()
         self._weather_index = 0
         self._actor_filter = args.filter
@@ -103,13 +115,14 @@ class World(object):
     def restart(self, args):
         self.restart_camera_manager(args)
         self.restart_camera_manager_1(args)
+        self.restart_camera_manager_2(args)
         pass
 
     def restart_camera_manager_1(self, args):
         """Restart the world"""
         # Keep same camera config if the camera manager exists.
-        cam_index = self.camera_manager_1.index if self.camera_manager_1 is not None else 6
-        cam_pos_id = self.camera_manager_1.transform_index if self.camera_manager_1 is not None else 0
+        cam_index = self.camera_manager_1.index if self.camera_manager_1 is not None else 0
+        cam_pos_id = self.camera_manager_1.transform_index if self.camera_manager_1 is not None else 5
         # Set the seed if requested by user
         if args.seed is not None:
             random.seed(args.seed)
@@ -119,6 +132,24 @@ class World(object):
             self.player, self.hud, self._gamma)
         self.camera_manager_1.transform_index = cam_pos_id
         self.camera_manager_1.set_sensor(cam_index, notify=False)
+        self.camera_manager_1.name = "left_cam"
+
+    def restart_camera_manager_2(self, args):
+        """Restart the world"""
+        # Keep same camera config if the camera manager exists.
+        # 6 is lidar, 1 is raw_depth
+        cam_index = self.camera_manager_2.index if self.camera_manager_2 is not None else 1
+        cam_pos_id = self.camera_manager_2.transform_index if self.camera_manager_2 is not None else 0
+        # Set the seed if requested by user
+        if args.seed is not None:
+            random.seed(args.seed)
+
+        # Set up the sensors.
+        self.camera_manager_2 = CameraManager(
+            self.player, self.hud, self._gamma)
+        self.camera_manager_2.transform_index = cam_pos_id
+        self.camera_manager_2.set_sensor(cam_index, notify=False)
+        self.camera_manager_2.name = "depth"
 
     def restart_camera_manager(self, args):
         """Restart the world"""
@@ -163,6 +194,8 @@ class World(object):
         self.camera_manager = CameraManager(self.player, self.hud, self._gamma)
         self.camera_manager.transform_index = cam_pos_id
         self.camera_manager.set_sensor(cam_index, notify=False)
+        self.camera_manager.name = "right_cam"
+
         actor_type = get_actor_display_name(self.player)
         self.hud.notification(actor_type)
 
@@ -178,6 +211,12 @@ class World(object):
         """Method for every tick"""
         self.hud.tick(self, clock)
 
+        # # add sensor dump
+        w_frame = self.world.get_snapshot().frame
+        self.camera_manager.tick(w_frame)
+        self.camera_manager_1.tick(w_frame)
+        self.camera_manager_2.tick(w_frame)
+
     def render(self, display):
         """Render world"""
         self.camera_manager.render(display)
@@ -192,6 +231,10 @@ class World(object):
         self.camera_manager_1.sensor.destroy()
         self.camera_manager_1.sensor = None
         self.camera_manager_1.index = None
+
+        self.camera_manager_2.sensor.destroy()
+        self.camera_manager_2.sensor = None
+        self.camera_manager_2.index = None
 
     def destroy(self):
         """Destroys all actors"""
@@ -589,6 +632,7 @@ class CameraManager(object):
         self._parent = parent_actor
         self.hud = hud
         self.recording = True
+        self.name = None
         bound_y = 0.5 + self._parent.bounding_box.extent.y
         attachment = carla.AttachmentType
         self._camera_transforms = [
@@ -601,7 +645,9 @@ class CameraManager(object):
             (carla.Transform(
                 carla.Location(x=-8.0, z=6.0), carla.Rotation(pitch=6.0)), attachment.SpringArm),
             (carla.Transform(
-                carla.Location(x=-1, y=-bound_y, z=0.5)), attachment.Rigid)]
+                carla.Location(x=-1, y=-bound_y, z=0.5)), attachment.Rigid),
+            (carla.Transform(
+                carla.Location(x=-5.5, z=2.5, y=1), carla.Rotation(pitch=8.0)), attachment.SpringArm), ]
         self.transform_index = 1
         self.sensors = [
             ['sensor.camera.rgb', cc.Raw, 'Camera RGB'],
@@ -624,9 +670,11 @@ class CameraManager(object):
                 if blp.has_attribute('gamma'):
                     blp.set_attribute('gamma', str(gamma_correction))
             elif item[0].startswith('sensor.lidar'):
-                blp.set_attribute('range', '50')
+                blp.set_attribute('range', '100')
+                # blp.set_attribute('points_per_second', '100000')
             item.append(blp)
         self.index = None
+        self.data = None
 
     def toggle_camera(self):
         """Activate a camera"""
@@ -658,20 +706,22 @@ class CameraManager(object):
             self.hud.notification(self.sensors[index][2])
         self.index = index
 
-    def next_sensor(self):
-        """Get the next sensor"""
-        self.set_sensor(self.index + 1)
-
-    def toggle_recording(self):
-        """Toggle recording on or off"""
-        self.recording = not self.recording
-        self.hud.notification('Recording %s' %
-                              ('On' if self.recording else 'Off'))
-
     def render(self, display):
         """Render method"""
         if self.surface is not None:
             display.blit(self.surface, (0, 0))
+
+    def tick(self, frame_id):
+        is_depth = self.sensors[self.index][0].startswith(
+            'sensor.camera.depth')
+        if self.recording and self.data is not None:
+            if is_depth:
+                self.data.save_to_disk(
+                    '_dual_out/' + self.name + '_%08d' % frame_id, carla.ColorConverter.Raw)
+            else:
+                self.data.save_to_disk(
+                    '_dual_out/' + self.name + '_%08d' % frame_id)
+        self.data = None
 
     @staticmethod
     def _parse_image(weak_self, image):
@@ -700,11 +750,14 @@ class CameraManager(object):
             array = array[:, :, :3]
             array = array[:, :, ::-1]
             self.surface = pygame.surfarray.make_surface(array.swapaxes(0, 1))
-        if self.recording:
-            if is_lidar:
-                image.save_to_disk('_out/lidar_%08d' % image.frame)
-            else:
-                image.save_to_disk('_out/camera_%08d' % image.frame)
+
+        self.data = image
+        # if self.recording:
+        #     # add motion detector?
+        #     if is_lidar:
+        #         image.save_to_disk('_out/lidar_%08d' % image.frame)
+        #     else:
+        #         image.save_to_disk('_out/camera_%08d' % image.frame)
 
 # ==============================================================================
 # -- Game Loop ---------------------------------------------------------
