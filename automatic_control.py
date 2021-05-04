@@ -130,6 +130,9 @@ class World(object):
         self.restart_camera_manager_1(args)
         self.restart_camera_manager_2(args)
         self.restart_camera_manager_3(args)
+        self.restart_camera_manager_4(args)
+        self.restart_camera_manager_5(args)
+        self.restart_camera_manager_6(args)
         pass
 
     def restart_camera_manager(self, args):
@@ -234,52 +237,52 @@ class World(object):
         """Restart the world"""
         # Keep same camera config if the camera manager exists.
         # 7 is seg lidar, 6 is lidar, 1 is raw_depth
-        cam_index = self.camera_manager_3.index if self.camera_manager_3 is not None else 0
-        cam_pos_id = self.camera_manager_3.transform_index if self.camera_manager_3 is not None else 3
+        cam_index = self.camera_manager_4.index if self.camera_manager_4 is not None else 0
+        cam_pos_id = self.camera_manager_4.transform_index if self.camera_manager_4 is not None else 3
         # Set the seed if requested by user
         if args.seed is not None:
             random.seed(args.seed)
 
         # Set up the sensors.
-        self.camera_manager_3 = CameraManager(
+        self.camera_manager_4 = CameraManager(
             self.player, self.hud, self._gamma)
-        self.camera_manager_3.transform_index = cam_pos_id
-        self.camera_manager_3.set_sensor(cam_index, notify=False)
-        self.camera_manager_3.name = "left_3"
+        self.camera_manager_4.transform_index = cam_pos_id
+        self.camera_manager_4.set_sensor(cam_index, notify=False)
+        self.camera_manager_4.name = "left_3"
 
     def restart_camera_manager_5(self, args):
         """Restart the world"""
         # Keep same camera config if the camera manager exists.
         # 7 is seg lidar, 6 is lidar, 1 is raw_depth
-        cam_index = self.camera_manager_3.index if self.camera_manager_3 is not None else 0
-        cam_pos_id = self.camera_manager_3.transform_index if self.camera_manager_3 is not None else 4
+        cam_index = self.camera_manager_5.index if self.camera_manager_5 is not None else 0
+        cam_pos_id = self.camera_manager_5.transform_index if self.camera_manager_5 is not None else 4
         # Set the seed if requested by user
         if args.seed is not None:
             random.seed(args.seed)
 
         # Set up the sensors.
-        self.camera_manager_3 = CameraManager(
+        self.camera_manager_5 = CameraManager(
             self.player, self.hud, self._gamma)
-        self.camera_manager_3.transform_index = cam_pos_id
-        self.camera_manager_3.set_sensor(cam_index, notify=False)
-        self.camera_manager_3.name = "left_4"
+        self.camera_manager_5.transform_index = cam_pos_id
+        self.camera_manager_5.set_sensor(cam_index, notify=False)
+        self.camera_manager_5.name = "left_4"
 
     def restart_camera_manager_6(self, args):
         """Restart the world"""
         # Keep same camera config if the camera manager exists.
         # 7 is seg lidar, 6 is lidar, 1 is raw_depth
-        cam_index = self.camera_manager_3.index if self.camera_manager_3 is not None else 0
-        cam_pos_id = self.camera_manager_3.transform_index if self.camera_manager_3 is not None else 5
+        cam_index = self.camera_manager_6.index if self.camera_manager_6 is not None else 0
+        cam_pos_id = self.camera_manager_6.transform_index if self.camera_manager_6 is not None else 5
         # Set the seed if requested by user
         if args.seed is not None:
             random.seed(args.seed)
 
         # Set up the sensors.
-        self.camera_manager_3 = CameraManager(
+        self.camera_manager_6 = CameraManager(
             self.player, self.hud, self._gamma)
-        self.camera_manager_3.transform_index = cam_pos_id
-        self.camera_manager_3.set_sensor(cam_index, notify=False)
-        self.camera_manager_3.name = "left_5"
+        self.camera_manager_6.transform_index = cam_pos_id
+        self.camera_manager_6.set_sensor(cam_index, notify=False)
+        self.camera_manager_6.name = "left_5"
 
     def next_weather(self, reverse=False):
         """Get next weather setting"""
