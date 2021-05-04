@@ -122,7 +122,7 @@ class World(object):
         """Restart the world"""
         # Keep same camera config if the camera manager exists.
         cam_index = self.camera_manager_1.index if self.camera_manager_1 is not None else 0
-        cam_pos_id = self.camera_manager_1.transform_index if self.camera_manager_1 is not None else 5
+        cam_pos_id = self.camera_manager_1.transform_index if self.camera_manager_1 is not None else 1
         # Set the seed if requested by user
         if args.seed is not None:
             random.seed(args.seed)
@@ -636,12 +636,15 @@ class CameraManager(object):
         bound_y = 0.5 + self._parent.bounding_box.extent.y
         attachment = carla.AttachmentType
         self._camera_transforms = [
-            (carla.Transform(
-                carla.Location(x=-5.5, z=2.5), carla.Rotation(pitch=8.0)), attachment.SpringArm),
-            (carla.Transform(
-                carla.Location(x=1.6, z=1.7)), attachment.Rigid),
-            (carla.Transform(
-                carla.Location(x=5.5, y=1.5, z=1.5)), attachment.SpringArm),
+            (carla.Transform(carla.Location(x=1.6, z=1.7)), attachment.Rigid),
+            (carla.Transform(carla.Location(x=1.6, z=1.7, y=3)), attachment.Rigid),
+            (carla.Transform(carla.Location(x=-5.5, z=2.5),
+             carla.Rotation(pitch=8.0)), attachment.SpringArm),
+            (carla.Transform(carla.Location(x=-5.5, z=2.5, y=1),
+             carla.Rotation(pitch=8.0)), attachment.SpringArm),
+
+            (carla.Transform(carla.Location(x=1.6, z=1.7)), attachment.Rigid),
+            (carla.Transform(carla.Location(x=5.5, y=1.5, z=2.5)), attachment.Rigid),
             (carla.Transform(
                 carla.Location(x=-8.0, z=6.0), carla.Rotation(pitch=6.0)), attachment.SpringArm),
             (carla.Transform(
@@ -717,7 +720,7 @@ class CameraManager(object):
         if self.recording and self.data is not None:
             if is_depth:
                 self.data.save_to_disk(
-                    '_dual_out/' + self.name + '_%08d' % frame_id, carla.ColorConverter.Raw)
+                    '_dual_out/' + self.name + '_%08d' % frame_id, carla.ColorConverter.LogarithmicDepth)  # todo: save as np to avoid converting 0 to 1
             else:
                 self.data.save_to_disk(
                     '_dual_out/' + self.name + '_%08d' % frame_id)
