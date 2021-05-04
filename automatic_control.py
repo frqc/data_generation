@@ -109,10 +109,13 @@ class World(object):
         self.collision_sensor = None
         self.lane_invasion_sensor = None
         self.gnss_sensor = None
-        self.camera_manager = None
-        self.camera_manager_1 = None
-        self.camera_manager_2 = None
-        self.camera_manager_3 = None
+        self.camera_manager = None  # right cam
+        self.camera_manager_1 = None  # right depth
+        self.camera_manager_2 = None  # left cam 1
+        self.camera_manager_3 = None  # left cam 2
+        self.camera_manager_4 = None  # left cam 3
+        self.camera_manager_5 = None  # left cam 4
+        self.camera_manager_6 = None  # left cam 5
         self._weather_presets = find_weather_presets()
         self._weather_index = 0
         self._actor_filter = args.filter
@@ -128,56 +131,6 @@ class World(object):
         self.restart_camera_manager_2(args)
         self.restart_camera_manager_3(args)
         pass
-
-    def restart_camera_manager_1(self, args):
-        """Restart the world"""
-        # Keep same camera config if the camera manager exists.
-        cam_index = self.camera_manager_1.index if self.camera_manager_1 is not None else 0
-        cam_pos_id = self.camera_manager_1.transform_index if self.camera_manager_1 is not None else 1
-        # Set the seed if requested by user
-        if args.seed is not None:
-            random.seed(args.seed)
-
-        # Set up the sensors.
-        self.camera_manager_1 = CameraManager(
-            self.player, self.hud, self._gamma)
-        self.camera_manager_1.transform_index = cam_pos_id
-        self.camera_manager_1.set_sensor(cam_index, notify=False)
-        self.camera_manager_1.name = "left_cam"
-
-    def restart_camera_manager_2(self, args):
-        """Restart the world"""
-        # Keep same camera config if the camera manager exists.
-        # 6 is lidar, 1 is raw_depth
-        cam_index = self.camera_manager_2.index if self.camera_manager_2 is not None else 1
-        cam_pos_id = self.camera_manager_2.transform_index if self.camera_manager_2 is not None else 0
-        # Set the seed if requested by user
-        if args.seed is not None:
-            random.seed(args.seed)
-
-        # Set up the sensors.
-        self.camera_manager_2 = CameraManager(
-            self.player, self.hud, self._gamma)
-        self.camera_manager_2.transform_index = cam_pos_id
-        self.camera_manager_2.set_sensor(cam_index, notify=False)
-        self.camera_manager_2.name = "depth"
-
-    def restart_camera_manager_3(self, args):
-        """Restart the world"""
-        # Keep same camera config if the camera manager exists.
-        # 7 is seg lidar, 6 is lidar, 1 is raw_depth
-        cam_index = self.camera_manager_3.index if self.camera_manager_3 is not None else 7
-        cam_pos_id = self.camera_manager_3.transform_index if self.camera_manager_3 is not None else 0
-        # Set the seed if requested by user
-        if args.seed is not None:
-            random.seed(args.seed)
-
-        # Set up the sensors.
-        self.camera_manager_3 = CameraManager(
-            self.player, self.hud, self._gamma)
-        self.camera_manager_3.transform_index = cam_pos_id
-        self.camera_manager_3.set_sensor(cam_index, notify=False)
-        self.camera_manager_3.name = "lidar"
 
     def restart_camera_manager(self, args):
         """Restart the world"""
@@ -227,24 +180,129 @@ class World(object):
         actor_type = get_actor_display_name(self.player)
         self.hud.notification(actor_type)
 
+    def restart_camera_manager_1(self, args):
+        """Restart the world"""
+        # Keep same camera config if the camera manager exists.
+        cam_index = self.camera_manager_1.index if self.camera_manager_1 is not None else 1
+        cam_pos_id = self.camera_manager_1.transform_index if self.camera_manager_1 is not None else 0
+        # Set the seed if requested by user
+        if args.seed is not None:
+            random.seed(args.seed)
+
+        # Set up the sensors.
+        self.camera_manager_1 = CameraManager(
+            self.player, self.hud, self._gamma)
+        self.camera_manager_1.transform_index = cam_pos_id
+        self.camera_manager_1.set_sensor(cam_index, notify=False)
+        self.camera_manager_1.name = "depth"
+
+    def restart_camera_manager_2(self, args):
+        """Restart the world"""
+        # Keep same camera config if the camera manager exists.
+        # 6 is lidar, 1 is raw_depth
+        cam_index = self.camera_manager_2.index if self.camera_manager_2 is not None else 0
+        cam_pos_id = self.camera_manager_2.transform_index if self.camera_manager_2 is not None else 1
+        # Set the seed if requested by user
+        if args.seed is not None:
+            random.seed(args.seed)
+
+        # Set up the sensors.
+        self.camera_manager_2 = CameraManager(
+            self.player, self.hud, self._gamma)
+        self.camera_manager_2.transform_index = cam_pos_id
+        self.camera_manager_2.set_sensor(cam_index, notify=False)
+        self.camera_manager_2.name = "left_1"
+
+    def restart_camera_manager_3(self, args):
+        """Restart the world"""
+        # Keep same camera config if the camera manager exists.
+        # 7 is seg lidar, 6 is lidar, 1 is raw_depth
+        cam_index = self.camera_manager_3.index if self.camera_manager_3 is not None else 0
+        cam_pos_id = self.camera_manager_3.transform_index if self.camera_manager_3 is not None else 2
+        # Set the seed if requested by user
+        if args.seed is not None:
+            random.seed(args.seed)
+
+        # Set up the sensors.
+        self.camera_manager_3 = CameraManager(
+            self.player, self.hud, self._gamma)
+        self.camera_manager_3.transform_index = cam_pos_id
+        self.camera_manager_3.set_sensor(cam_index, notify=False)
+        self.camera_manager_3.name = "left_2"
+
+    def restart_camera_manager_4(self, args):
+        """Restart the world"""
+        # Keep same camera config if the camera manager exists.
+        # 7 is seg lidar, 6 is lidar, 1 is raw_depth
+        cam_index = self.camera_manager_3.index if self.camera_manager_3 is not None else 0
+        cam_pos_id = self.camera_manager_3.transform_index if self.camera_manager_3 is not None else 3
+        # Set the seed if requested by user
+        if args.seed is not None:
+            random.seed(args.seed)
+
+        # Set up the sensors.
+        self.camera_manager_3 = CameraManager(
+            self.player, self.hud, self._gamma)
+        self.camera_manager_3.transform_index = cam_pos_id
+        self.camera_manager_3.set_sensor(cam_index, notify=False)
+        self.camera_manager_3.name = "left_3"
+
+    def restart_camera_manager_5(self, args):
+        """Restart the world"""
+        # Keep same camera config if the camera manager exists.
+        # 7 is seg lidar, 6 is lidar, 1 is raw_depth
+        cam_index = self.camera_manager_3.index if self.camera_manager_3 is not None else 0
+        cam_pos_id = self.camera_manager_3.transform_index if self.camera_manager_3 is not None else 4
+        # Set the seed if requested by user
+        if args.seed is not None:
+            random.seed(args.seed)
+
+        # Set up the sensors.
+        self.camera_manager_3 = CameraManager(
+            self.player, self.hud, self._gamma)
+        self.camera_manager_3.transform_index = cam_pos_id
+        self.camera_manager_3.set_sensor(cam_index, notify=False)
+        self.camera_manager_3.name = "left_4"
+
+    def restart_camera_manager_6(self, args):
+        """Restart the world"""
+        # Keep same camera config if the camera manager exists.
+        # 7 is seg lidar, 6 is lidar, 1 is raw_depth
+        cam_index = self.camera_manager_3.index if self.camera_manager_3 is not None else 0
+        cam_pos_id = self.camera_manager_3.transform_index if self.camera_manager_3 is not None else 5
+        # Set the seed if requested by user
+        if args.seed is not None:
+            random.seed(args.seed)
+
+        # Set up the sensors.
+        self.camera_manager_3 = CameraManager(
+            self.player, self.hud, self._gamma)
+        self.camera_manager_3.transform_index = cam_pos_id
+        self.camera_manager_3.set_sensor(cam_index, notify=False)
+        self.camera_manager_3.name = "left_5"
+
     def next_weather(self, reverse=False):
         """Get next weather setting"""
         self._weather_index += -1 if reverse else 1
         self._weather_index %= len(self._weather_presets)  # random!
         preset = self._weather_presets[self._weather_index]
         self.hud.notification('Weather: %s' % preset[1])
+
         self.player.get_world().set_weather(preset[0])
 
     def tick(self, clock):
         """Method for every tick"""
         self.hud.tick(self, clock)
 
-        # # add sensor dump
+        # add sensor dump
         w_frame = self.world.get_snapshot().frame
         self.camera_manager.tick(w_frame)
         self.camera_manager_1.tick(w_frame)
         self.camera_manager_2.tick(w_frame)
         self.camera_manager_3.tick(w_frame)
+        self.camera_manager_4.tick(w_frame)
+        self.camera_manager_5.tick(w_frame)
+        self.camera_manager_6.tick(w_frame)
 
     def render(self, display):
         """Render world"""
@@ -269,6 +327,18 @@ class World(object):
         self.camera_manager_3.sensor = None
         self.camera_manager_3.index = None
 
+        self.camera_manager_4.sensor.destroy()
+        self.camera_manager_4.sensor = None
+        self.camera_manager_4.index = None
+
+        self.camera_manager_5.sensor.destroy()
+        self.camera_manager_5.sensor = None
+        self.camera_manager_5.index = None
+
+        self.camera_manager_6.sensor.destroy()
+        self.camera_manager_6.sensor = None
+        self.camera_manager_6.index = None
+
     def destroy(self):
         """Destroys all actors"""
         actors = [
@@ -276,6 +346,9 @@ class World(object):
             self.camera_manager_1.sensor,
             self.camera_manager_2.sensor,
             self.camera_manager_3.sensor,
+            self.camera_manager_4.sensor,
+            self.camera_manager_5.sensor,
+            self.camera_manager_6.sensor,
             self.collision_sensor.sensor,
             self.lane_invasion_sensor.sensor,
             self.gnss_sensor.sensor,
@@ -453,15 +526,10 @@ class HUD(object):
         self._notifications.render(display)
         self.help.render(display)
 
-# ==============================================================================
-# -- FadingText ----------------------------------------------------------------
-# ==============================================================================
-
 
 # ==============================================================================
 # -- CameraManager -------------------------------------------------------------
 # ==============================================================================
-
 
 class CameraManager(object):
     """ Class for camera management"""
@@ -478,7 +546,11 @@ class CameraManager(object):
         attachment = carla.AttachmentType
         self._camera_transforms = [
             (carla.Transform(carla.Location(x=1.6, z=1.7)), attachment.Rigid),
+            (carla.Transform(carla.Location(x=1.6, z=1.7, y=1)), attachment.Rigid),
             (carla.Transform(carla.Location(x=1.6, z=1.7, y=3)), attachment.Rigid),
+            (carla.Transform(carla.Location(x=1.6, z=1.7, y=5)), attachment.Rigid),
+            (carla.Transform(carla.Location(x=1.6, z=1.7, y=7)), attachment.Rigid),
+            (carla.Transform(carla.Location(x=1.6, z=1.7, y=10)), attachment.Rigid),
             (carla.Transform(carla.Location(x=-5.5, z=2.5),
              carla.Rotation(pitch=8.0)), attachment.SpringArm),
             (carla.Transform(carla.Location(x=-5.5, z=2.5, y=1),
@@ -495,16 +567,7 @@ class CameraManager(object):
         self.transform_index = 1
         self.sensors = [
             ['sensor.camera.rgb', cc.Raw, 'Camera RGB'],
-            ['sensor.camera.depth', cc.Raw, 'Camera Depth (Raw)'],
-            ['sensor.camera.depth', cc.Depth, 'Camera Depth (Gray Scale)'],
-            ['sensor.camera.depth', cc.LogarithmicDepth,
-                'Camera Depth (Logarithmic Gray Scale)'],
-            ['sensor.camera.semantic_segmentation', cc.Raw,
-                'Camera Semantic Segmentation (Raw)'],
-            ['sensor.camera.semantic_segmentation', cc.CityScapesPalette,
-             'Camera Semantic Segmentation (CityScapes Palette)'],
-            ['sensor.lidar.ray_cast', None, 'Lidar (Ray-Cast)'],
-            ['sensor.lidar.ray_cast_semantic', None, 'Lidar (Ray-Cast-Semantic)']]
+            ['sensor.camera.depth', cc.Raw, 'Camera Depth (Raw)']]
         world = self._parent.get_world()
         bp_library = world.get_blueprint_library()
         for item in self.sensors:
@@ -562,10 +625,10 @@ class CameraManager(object):
         if self.recording and self.data is not None:
             if is_depth:
                 self.data.save_to_disk(
-                    '_tri_out/' + self.name + '/%08d' % frame_id, carla.ColorConverter.LogarithmicDepth)  # todo: save as np to avoid converting 0 to 1
+                    '_six_out/' + self.name + '/%08d' % frame_id, carla.ColorConverter.LogarithmicDepth)  # todo: save as np to avoid converting 0 to 1
             else:
                 self.data.save_to_disk(
-                    '_tri_out/' + self.name + '/%08d' % frame_id)
+                    '_six_out/' + self.name + '/%08d' % frame_id)
         self.data = None
 
     @staticmethod
@@ -597,12 +660,6 @@ class CameraManager(object):
             self.surface = pygame.surfarray.make_surface(array.swapaxes(0, 1))
 
         self.data = image
-        # if self.recording:
-        #     # add motion detector?
-        #     if is_lidar:
-        #         image.save_to_disk('_out/lidar_%08d' % image.frame)
-        #     else:
-        #         image.save_to_disk('_out/camera_%08d' % image.frame)
 
 # ==============================================================================
 # -- Game Loop ---------------------------------------------------------
