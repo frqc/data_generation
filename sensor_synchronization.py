@@ -78,17 +78,15 @@ def main():
         # Bluepints for the sensors
         blueprint_library = world.get_blueprint_library()
         cam_bp = blueprint_library.find('sensor.camera.rgb')
-        lidar_bp = blueprint_library.find('sensor.lidar.ray_cast')
-        radar_bp = blueprint_library.find('sensor.other.radar')
+        depth_cam_bp = blueprint_library.find('sensor.camera.depth')
 
         # We create all the sensors and keep them in a list for convenience.
         sensor_list = []
-        # for i in range(5):
-        #     cam01 = world.spawn_actor(cam_bp, carla.Transform())
-        #     cam01.listen(lambda data: sensor_callback(
-        #         data, sensor_queue, "cam_" + str(i)))
 
-        #     sensor_list.append((cam01, i))
+        depth_cam = world.spawn_actor(depth_cam_bp, carla.Transform())
+        depth_cam.listen(lambda data: sensor_callback(
+            data, sensor_queue, "depth_cam"))
+        sensor_list.append((depth_cam, 0))
 
         cam00 = world.spawn_actor(cam_bp, carla.Transform())
         cam00.listen(lambda data: sensor_callback(
@@ -125,7 +123,7 @@ def main():
         for sensor, location_id in sensor_list:
             new_location = get_transform(spawn_point, location_id)
             sensor.set_transform(new_location)
-
+            
         # Main loop
         while True:
             # Tick the server
