@@ -120,6 +120,7 @@ def main():
 
         # Initialize locations
         spawn_point = random.choice(carla_map.get_spawn_points())
+        spawn_point.rotation.yaw = random.random() * 360
         for sensor, location_id in sensor_list:
             new_location = get_transform(spawn_point, location_id)
             sensor.set_transform(new_location)
@@ -131,6 +132,7 @@ def main():
             w_frame = world.get_snapshot().frame
 
             spawn_point = random.choice(carla_map.get_spawn_points())
+            spawn_point.rotation.yaw = random.random() * 360
 
             print("\nWorld's frame: %d" % w_frame)
 
