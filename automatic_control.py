@@ -20,6 +20,7 @@ import os
 import random
 import re
 import sys
+import string
 import weakref
 
 try:
@@ -286,9 +287,10 @@ class World(object):
 
     def next_weather(self, reverse=False):
         """Get next weather setting"""
-        self._weather_index += -1 if reverse else 1
-        self._weather_index %= len(self._weather_presets)  # random!
-        preset = self._weather_presets[self._weather_index]
+        # self._weather_index += -1 if reverse else 1
+        # self._weather_index %= len(self._weather_presets)  # random!
+        preset = random.choice(self._weather_presets)
+        print("Weather: ", preset)
         self.hud.notification('Weather: %s' % preset[1])
 
         self.player.get_world().set_weather(preset[0])
@@ -299,13 +301,21 @@ class World(object):
 
         # add sensor dump
         w_frame = self.world.get_snapshot().frame
-        self.camera_manager.tick(w_frame)
-        self.camera_manager_1.tick(w_frame)
-        self.camera_manager_2.tick(w_frame)
-        self.camera_manager_3.tick(w_frame)
-        self.camera_manager_4.tick(w_frame)
-        self.camera_manager_5.tick(w_frame)
-        self.camera_manager_6.tick(w_frame)
+        random_str = ''.join(random.choices(
+            string.ascii_lowercase + string.digits, k=5))
+        random_str += "-"
+
+        self.camera_manager.tick(w_frame, random_str)
+        self.camera_manager_1.tick(w_frame, random_str)
+        self.camera_manager_2.tick(w_frame, random_str)
+        self.camera_manager_3.tick(w_frame, random_str)
+        self.camera_manager_4.tick(w_frame, random_str)
+        self.camera_manager_5.tick(w_frame, random_str)
+        self.camera_manager_6.tick(w_frame, random_str)
+
+        if w_frame % 3 == 0:
+            self.next_weather()
+            # self.restart(self.args)
 
     def render(self, display):
         """Render world"""
@@ -359,8 +369,8 @@ class World(object):
         for actor in actors:
             if actor is not None:
                 actor.destroy()
-
-        return (key == K_ESCAPE) or (key == K_q and pygame.key.get_mods() & KMOD_CTRL)
+        return True
+        # return (key == K_ESCAPE) or (key == K_q and pygame.key.get_mods() & KMOD_CTRL)
 
 # ==============================================================================
 # -- HUD -----------------------------------------------------------------------
@@ -549,11 +559,11 @@ class CameraManager(object):
         attachment = carla.AttachmentType
         self._camera_transforms = [
             (carla.Transform(carla.Location(x=1.6, z=1.7)), attachment.Rigid),
-            (carla.Transform(carla.Location(x=1.6, z=1.7, y=1)), attachment.Rigid),
-            (carla.Transform(carla.Location(x=1.6, z=1.7, y=3)), attachment.Rigid),
-            (carla.Transform(carla.Location(x=1.6, z=1.7, y=5)), attachment.Rigid),
-            (carla.Transform(carla.Location(x=1.6, z=1.7, y=7)), attachment.Rigid),
-            (carla.Transform(carla.Location(x=1.6, z=1.7, y=10)), attachment.Rigid),
+            (carla.Transform(carla.Location(x=1.6, z=1.7, y=0.1)), attachment.Rigid),
+            (carla.Transform(carla.Location(x=1.6, z=1.7, y=0.2)), attachment.Rigid),
+            (carla.Transform(carla.Location(x=1.6, z=1.7, y=0.3)), attachment.Rigid),
+            (carla.Transform(carla.Location(x=1.6, z=1.7, y=0.5)), attachment.Rigid),
+            (carla.Transform(carla.Location(x=1.6, z=1.7, y=0.7)), attachment.Rigid),
             (carla.Transform(carla.Location(x=-5.5, z=2.5),
              carla.Rotation(pitch=8.0)), attachment.SpringArm),
             (carla.Transform(carla.Location(x=-5.5, z=2.5, y=1),
@@ -622,19 +632,20 @@ class CameraManager(object):
         if self.surface is not None:
             display.blit(self.surface, (0, 0))
 
-    def tick(self, frame_id):
+    def tick(self, frame_id, random_str=""):
         is_depth = self.sensors[self.index][0].startswith(
             'sensor.camera.depth')
         if self.recording and self.data is not None:
-            if is_depth:
-                self.data.save_to_disk(
-                    '_six_out/' + self.name + '/%08d' % frame_id, carla.ColorConverter.LogarithmicDepth)  # todo: save as np to avoid converting 0 to 1
-            else:
-                self.data.save_to_disk(
-                    '_six_out/' + self.name + '/%08d' % frame_id)
+            file_name = '_six_out/' + self.name + '/' + random_str + '%08d' % frame_id
+            self.data.save_to_disk(file_name)
+            # if is_depth:
+            #     self.data.save_to_disk(
+            #         file_name, carla.ColorConverter.LogarithmicDepth)
+            # else:
+            #     self.data.save_to_disk(file_name)
         self.data = None
 
-    @staticmethod
+    @ staticmethod
     def _parse_image(weak_self, image):
         self = weak_self()
         if not self:
@@ -754,7 +765,7 @@ def game_loop(args):
                     print("Target reached, mission accomplished...")
                     break
 
-                speed_limit = world.player.get_speed_limit()
+                speed_limit = world.player.get_speed_limit() * 10
                 agent.get_local_planner().set_speed(speed_limit)
 
                 control = agent.run_step()
