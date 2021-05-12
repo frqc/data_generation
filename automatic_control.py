@@ -93,7 +93,8 @@ class World(object):
         """Constructor method"""
 
         settings = carla_world.get_settings()
-        settings.synchronous_mode = False
+        settings.fixed_delta_seconds = 0.005
+        settings.synchronous_mode = True
         carla_world.apply_settings(settings)
 
         self.world = carla_world
@@ -730,16 +731,16 @@ def game_loop(args):
             if controller.parse_events():
                 return
 
-            # As soon as the server is ready continue!
-            if not world.world.wait_for_tick(10.0):
-                continue
+            # # As soon as the server is ready continue!
+            # if not world.world.wait_for_tick(10.0):
+            #     continue
 
             if args.agent == "Roaming" or args.agent == "Basic":
                 if controller.parse_events():
                     return
 
                 # as soon as the server is ready continue!
-                world.world.wait_for_tick(10.0)
+                # world.world.wait_for_tick(10.0)
 
                 world.tick(clock)
                 world.render(display)
@@ -751,6 +752,7 @@ def game_loop(args):
                 agent.update_information()
 
                 world.tick(clock)
+                print("worlk ticked")
                 world.render(display)
                 pygame.display.flip()
 

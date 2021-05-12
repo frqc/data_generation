@@ -21,14 +21,14 @@ not the case, the clients needs to take in account at each frame how many
 sensors are going to tick at each frame.
 """
 
-import glob
-import os
-import sys
+import re
 from queue import Queue
 from queue import Empty
-import random
 import carla
 
+import random
+from datetime import datetime
+random.seed(datetime.now())
 
 # Sensor callback.
 # This is where you receive the sensor data and
@@ -42,7 +42,8 @@ def sensor_callback(sensor_data, sensor_queue, sensor_name):
 
 def get_transform(one_transform, location_id):
 
-    location_delta = one_transform.get_right_vector() * int(location_id) * 0.1
+    distance_dict = {0: 0, 1: 0.1, 2: 0.2, 3:0.3, 4:0.5, 5:0.7}
+    location_delta = one_transform.get_right_vector() * distance_dict[location_id]
 
     final_transform = carla.Transform(
         carla.Location(x=one_transform.location.x + location_delta.x,
@@ -50,6 +51,21 @@ def get_transform(one_transform, location_id):
                        y=one_transform.location.y + location_delta.y))
 
     return final_transform
+
+
+def find_weather_presets():
+    """Method to find weather presets"""
+    rgx = re.compile('.+?(?:(?<=[a-z])(?=[A-Z])|(?<=[A-Z])(?=[A-Z][a-z])|$)')
+    def name(x): return ' '.join(m.group(0) for m in rgx.finditer(x))
+    presets = [x for x in dir(carla.WeatherParameters)
+               if re.match('[A-Z].+', x)]
+    return [(getattr(carla.WeatherParameters, x), name(x)) for x in presets]
+
+weather_presets = find_weather_presets()
+def next_weather(world):
+    preset = random.choice(weather_presets)
+    print("Weather: ", preset)
+    world.set_weather(preset[0])
 
 
 def main():
@@ -85,37 +101,37 @@ def main():
 
         depth_cam = world.spawn_actor(depth_cam_bp, carla.Transform())
         depth_cam.listen(lambda data: sensor_callback(
-            data, sensor_queue, "depth_cam"))
+            data, sensor_queue, "depth"))
         sensor_list.append((depth_cam, 0))
 
         cam00 = world.spawn_actor(cam_bp, carla.Transform())
         cam00.listen(lambda data: sensor_callback(
-            data, sensor_queue, "cam_" + str(0)))
+            data, sensor_queue, "right_cam"))
         sensor_list.append((cam00, 0))
 
         cam01 = world.spawn_actor(cam_bp, carla.Transform())
         cam01.listen(lambda data: sensor_callback(
-            data, sensor_queue, "cam_" + str(1)))
+            data, sensor_queue, "left_" + str(1)))
         sensor_list.append((cam01, 1))
 
         cam02 = world.spawn_actor(cam_bp, carla.Transform())
         cam02.listen(lambda data: sensor_callback(
-            data, sensor_queue, "cam_" + str(2)))
+            data, sensor_queue, "left_" + str(2)))
         sensor_list.append((cam02, 2))
 
         cam03 = world.spawn_actor(cam_bp, carla.Transform())
         cam03.listen(lambda data: sensor_callback(
-            data, sensor_queue, "cam_" + str(3)))
+            data, sensor_queue, "left_" + str(3)))
         sensor_list.append((cam03, 3))
 
         cam04 = world.spawn_actor(cam_bp, carla.Transform())
         cam04.listen(lambda data: sensor_callback(
-            data, sensor_queue, "cam_" + str(4)))
+            data, sensor_queue, "left_" + str(4)))
         sensor_list.append((cam04, 4))
 
         cam05 = world.spawn_actor(cam_bp, carla.Transform())
         cam05.listen(lambda data: sensor_callback(
-            data, sensor_queue, "cam_" + str(5)))
+            data, sensor_queue, "left_" + str(5)))
         sensor_list.append((cam05, 5))
 
         # Initialize locations
@@ -135,6 +151,10 @@ def main():
             spawn_point.rotation.yaw = random.random() * 360
 
             print("\nWorld's frame: %d" % w_frame)
+
+            if w_frame % 5 == 0:
+                next_weather(world)
+                print("new weather")
 
             # Now, we wait to the sensors data to be received.
             # As the queue is blocking, we will wait in the queue.get() methods
